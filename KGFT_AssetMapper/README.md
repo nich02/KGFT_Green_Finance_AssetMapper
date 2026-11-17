@@ -23,6 +23,8 @@ https://nich02.github.io/KGFT_Green_Finance_AssetMapper/ after deployment succee
 The browser demo accepts CSV files regardless of filename, provided the
 required column names are present. It detects comma, semicolon, tab, or pipe
 delimiters and handles a UTF-8 byte-order mark in the header.
+Choose a CSV first, confirm it loaded successfully, then select **Screen**.
+Export the workbook after screening completes.
 
 ## Upload and export
 - Upload a CSV using the dashboard's **Upload portfolio** control.

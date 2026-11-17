@@ -22,6 +22,15 @@ class AppTests(unittest.TestCase):
         self.assertEqual(dashboard.status_code, 200)
         self.assertIn(b"Executive overview", dashboard.data)
         self.assertIn(b"Portfolio screening distribution", dashboard.data)
+        dashboard_html = dashboard.data.decode()
+        self.assertLess(
+            dashboard_html.index("＋ Choose portfolio"),
+            dashboard_html.index(">Screen</button>"),
+        )
+        self.assertLess(
+            dashboard_html.index(">Screen</button>"),
+            dashboard_html.index("Export workbook"),
+        )
         self.assertEqual(client.get("/about").status_code, 200)
 
     def test_export_contains_four_screening_sheets(self):

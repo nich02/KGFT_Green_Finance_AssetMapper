@@ -8,7 +8,7 @@
 </style></head><body><div class="shell"><aside class="sidebar"><div class="brand"><div class="logo">♧</div><div><strong>GREEN FINANCE</strong><small>Portfolio intelligence</small></div></div><div class="navlabel">WORKSPACE</div><nav class="nav"><a class="active" href="#">▦ &nbsp; Executive overview</a><a href="#about">ⓘ &nbsp; About project</a></nav><div class="side-note">KGFT-informed asset screening<br>Interactive local preview</div></aside>
 <main class="main"><header class="topbar"><div class="crumb">Portfolio monitoring / Asset mapping</div><div class="tag">KENYA · KGFT SCREENING</div></header><div class="content">
 <div id="flash" class="flash">Interactive preview · Upload a CSV to replace the sample records in this browser session.</div>
-<div class="heading"><div><div class="eyebrow">GREEN FINANCE PORTFOLIO</div><h1>Executive overview</h1><div class="sub">Loan portfolio screening against KGFT-informed activity themes</div></div><div class="actions"><button class="btn secondary" onclick="exportCsv()">↓ Export portfolio CSV</button><label class="btn primary" for="file">＋ Upload portfolio</label><input class="file" id="file" type="file" accept=".csv,text/csv"></div></div>
+<div class="heading"><div><div class="eyebrow">GREEN FINANCE PORTFOLIO</div><h1>Executive overview</h1><div class="sub">Loan portfolio screening against KGFT-informed activity themes</div></div><div class="actions"><label class="btn primary" for="file">＋ Choose portfolio</label><input class="file" id="file" type="file" accept=".csv,text/csv"><button class="btn primary" id="screen-button" type="button" onclick="screenPortfolio()" disabled>Screen</button><button class="btn secondary" id="export-button" type="button" onclick="exportCsv()">↓ Export workbook</button></div></div>
 <div class="source" id="source">Synthetic demonstration portfolio · 500 records</div>
 <section class="kpis"><div class="card"><div class="kl">Total portfolio value</div><div class="kv">By currency</div><div class="kf" id="total-value">Currency-separated totals</div></div><div class="card"><div class="kl">Potential green exposure</div><div class="kv" id="green-pct">—</div><div class="kf">Green identified + manual assessment count</div></div><div class="card"><div class="kl">Taxonomy-aligned exposure</div><div class="kv">Not assessed</div><div class="kf">Requires evidence-based KGFT validation</div></div><div class="card"><div class="kl">Pending validation</div><div class="kv" id="pending">—</div><div class="kf">Green identified + manual assessment</div></div></section>
 <section class="grid2"><div class="card"><div class="ct">Portfolio screening distribution</div><div class="cd">Asset counts by preliminary screening outcome</div><div id="bars"></div></div><div class="card"><div class="ct">Screening interpretation</div><div class="cd">How to read the results</div><p class="muted"><b>Green identified</b> means a strong preliminary keyword match. <b>Manual assessment</b> means a partial or ambiguous match. <b>Not green</b> includes records without a configured positive match or with a potential exclusion flag.</p><p class="muted">A keyword result is a prioritisation aid, not a KGFT certification decision.</p></div></section>
@@ -30,6 +30,8 @@ const taxonomy = {
 const exclusions=["coal","crude oil","fossil fuel","natural gas","diesel","petrol","gasoline","lng","oil exploration","fracking"];
 let assets=initialAssets.map(x=>({...x,status:statusOf(x.screening_category)}));
 let activeGroup='all';
+let pendingAssets=null;
+let pendingFilename='';
 function statusOf(c){if(c==='Potential Green — Validation Required')return 'green';if(c==='Manual Assessment')return 'review';return 'other'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function classify(a){
@@ -105,9 +107,32 @@ function render(){
 }
 function exportCsv(){if(!assets.length)return;const cols=Object.keys(assets[0]).filter(k=>k!=='status');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[cols.join(','),...assets.map(a=>cols.map(k=>q(a[k])).join(','))].join('\\r\\n');const blob=new Blob(['\\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='green_asset_mapping_register.csv';a.click();URL.revokeObjectURL(url)}
 document.getElementById('search').addEventListener('input',render);
+function screenPortfolio(){
+ if(!pendingAssets){
+  document.getElementById('flash').textContent='Choose a valid CSV portfolio before screening.';
+  document.getElementById('flash').className='flash error';
+  return;
+ }
+ assets=pendingAssets.map(classify);
+ pendingAssets=null;
+ activeGroup='all';
+ document.querySelectorAll('.tab').forEach(button=>button.classList.toggle('active',button.dataset.group==='all'));
+ document.getElementById('source').textContent=pendingFilename+' · '+assets.length+' records screened locally';
+ pendingFilename='';
+ document.getElementById('screen-button').disabled=true;
+ document.getElementById('export-button').disabled=false;
+ document.getElementById('flash').textContent='Portfolio screened successfully in this browser.';
+ document.getElementById('flash').className='flash';
+ render();
+}
+
 document.getElementById('file').addEventListener('change',async e=>{
  const f=e.target.files[0];
  if(!f)return;
+ pendingAssets=null;
+ pendingFilename='';
+ document.getElementById('screen-button').disabled=true;
+ document.getElementById('export-button').disabled=true;
  try{
   const parsed=csvParse(await f.text());
   const required=['loan_id','origination_date','borrower_segment','industry_sector','county','product_description','purpose','collateral_type','currency','disbursed_amount','tenor_period'];
@@ -121,14 +146,13 @@ document.getElementById('file').addEventListener('change',async e=>{
   if(new Set(ids).size!==ids.length)throw new Error('loan_id values must be unique.');
   if(parsed.some(asset=>!asset.loan_id||!Number.isFinite(Number(asset.disbursed_amount))||Number(asset.disbursed_amount)<0))
    throw new Error('Each row needs a loan_id and a valid non-negative disbursed_amount.');
-  assets=parsed.map(classify);
-  activeGroup='all';
-  document.querySelectorAll('.tab').forEach(button=>button.classList.toggle('active',button.dataset.group==='all'));
-  document.getElementById('source').textContent=f.name+' · '+assets.length+' records uploaded locally';
-  document.getElementById('flash').textContent='CSV loaded and screened in this browser preview.';
+  pendingAssets=parsed;
+  pendingFilename=f.name;
+  document.getElementById('flash').textContent=f.name+' loaded successfully ('+parsed.length+' assets). Click Screen to process this portfolio.';
   document.getElementById('flash').className='flash';
-  render();
+  document.getElementById('screen-button').disabled=false;
  }catch(err){
+   document.getElementById('export-button').disabled=!assets.length;
   document.getElementById('flash').textContent='Upload error: '+err.message;
   document.getElementById('flash').className='flash error';
  }

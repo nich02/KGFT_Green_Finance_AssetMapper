@@ -183,12 +183,12 @@
             <div class="sub">Loan portfolio screening against KGFT-informed activity themes</div>
           </div>
           <div class="actions">
-            <a class="btn secondary" href="{{ url_for('export_portfolio') }}">↓ Export workbook</a>
             <form method="post" action="{{ url_for('upload_portfolio') }}" enctype="multipart/form-data" class="actions">
               <label class="btn primary" for="portfolio">＋ Choose portfolio</label>
               <input class="file" id="portfolio" name="portfolio" type="file" accept=".csv,text/csv" required>
-              <button class="btn primary" type="submit">Upload and screen</button>
+              <button class="btn primary" type="submit">Screen</button>
             </form>
+            <a class="btn secondary" href="{{ url_for('export_portfolio') }}">↓ Export workbook</a>
             <form method="post" action="{{ url_for('reset_portfolio') }}">
               <button class="btn secondary" type="submit">Restore demo data</button>
             </form>

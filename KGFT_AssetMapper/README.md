@@ -1,5 +1,9 @@
 # Green Asset Mapping — KGFT-informed portfolio screening
 
+See [Technical_Documentation.pdf](Technical_Documentation.pdf) for the
+architecture, data contract, screening method, operations, tests, and deployment
+details.
+
 ## Run the Flask dashboard
 ```bash
 python -m pip install -r requirements.txt

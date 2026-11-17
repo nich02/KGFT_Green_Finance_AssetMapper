@@ -1,0 +1,9 @@
+loan_id,origination_date,borrower_segment,industry_sector,county,product_description,purpose,collateral_type,currency,disbursed_amount,tenor_period
+KGL-001,2025-01-15,SME,Energy,Nairobi,Photovoltaic solar installation,Purchase solar panels and battery storage equipment,Equipment,KES,1200000,60 months
+KGL-002,2025-02-02,Corporate,Transport,Mombasa,Electric bus fleet,Acquire electric vehicle charging infrastructure,Vehicle,KES,8500000,84 months
+KGL-003,2025-02-19,SME,Construction,Kiambu,Commercial building retrofit,Improve energy efficiency and install LED systems,Property,KES,4200000,48 months
+KGL-004,2025-03-03,Micro,Water,Kisumu,Water treatment equipment,Small-scale water treatment and wastewater reuse,Equipment,KES,650000,36 months
+KGL-005,2025-03-21,SME,Agriculture,Nakuru,Farm input financing,Seasonal crop production inputs,Inventory,KES,280000,24 months
+KGL-006,2025-04-04,Corporate,Forestry,Nyeri,Forest restoration,Reforestation and biodiversity restoration,Land,KES,1900000,60 months
+KGL-007,2025-04-17,SME,Energy,Nairobi,Diesel generator,Purchase diesel generator for backup power,Equipment,KES,540000,36 months
+KGL-008,2025-05-01,Micro,Trade,Uasin Gishu,Working capital facility,General business working capital,Receivables,KES,95000,12 months

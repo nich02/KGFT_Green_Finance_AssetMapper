@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Green Asset Mapping Dashboard</title>
+  <style>
+    :root {
+      --leaf: #287a43;
+      --leaf-dark: #1d6336;
+      --ink: #183344;
+      --muted: #6b8793;
+      --line: #d9e8e9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #eff9f4, #e8f5fb);
+      color: var(--ink);
+      font: 13px/1.5 Inter, "Segoe UI", Arial, sans-serif;
+    }
+
+    .shell { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 225px;
+      flex-shrink: 0;
+      padding: 25px 18px;
+      background: linear-gradient(180deg, var(--leaf), var(--leaf-dark));
+      color: #e9f5eb;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 23px;
+      border-bottom: 1px solid #ffffff35;
+    }
+
+    .logo {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border-radius: 11px;
+      background: #e6f5e9;
+      color: #236d3b;
+      font-size: 22px;
+    }
+
+    .brand strong, .brand small { display: block; }
+    .brand strong { font-size: 12px; }
+    .brand small, .side-note { color: #c6e3ce; font-size: 10px; }
+    .navlabel { margin: 26px 8px 10px; color: #b9ddc4; font-size: 9px; letter-spacing: 1.5px; }
+    .nav a { display: block; padding: 10px 11px; border-radius: 8px; color: #e4f1e7; text-decoration: none; }
+    .nav a:hover, .nav a.active { background: #ffffff22; }
+    .side-note { margin-top: 55px; color: #c6e2ce; }
+
+    .main { flex: 1; min-width: 0; }
+
+    .topbar {
+      display: flex;
+      height: 63px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffffd9;
+    }
+
+    .crumb { color: var(--muted); font-size: 11px; }
+    .tag { padding: 7px 11px; border-radius: 20px; background: #e5f3e8; color: #246c3b; font-size: 9px; font-weight: 800; }
+    .content { max-width: 1500px; margin: auto; padding: 25px 28px; }
+    .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; margin-bottom: 7px; }
+    .eyebrow { color: var(--leaf); font-size: 9px; font-weight: 800; letter-spacing: 1.5px; }
+    h1 { margin: 5px 0; color: #173b4b; font-size: 25px; }
+    .sub { color: var(--muted); font-size: 11px; }
+    .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 10px 13px; border: 0; border-radius: 8px; font-size: 10px; font-weight: 750; cursor: pointer; text-decoration: none; }
+    .btn.secondary { border: 1px solid #cfe3d4; background: #fff; color: #276c3e; }
+    .btn.primary { background: var(--leaf); color: #fff; }
+    .btn:hover { filter: brightness(.97); }
+    .source { margin: 0 0 16px; color: #82979f; font-size: 10px; }
+    .flash { margin: 0 0 9px; color: #276d3d; font-size: 10px; }
+    .flash.error { color: #a33e32; }
+    .flash.success { color: #276d3d; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 15px; }
+    .card { padding: 15px; border: 1px solid #dcebed; border-radius: 13px; background: #ffffffed; box-shadow: 0 5px 18px #22556a0a; }
+    .kl { color: var(--muted); font-size: 10px; }
+    .kv { margin: 8px 0 2px; font-size: 21px; font-weight: 800; }
+    .kf { color: #78909a; font-size: 9px; }
+    .amount-list { display: flex; gap: 6px 12px; flex-wrap: wrap; margin-top: 5px; }
+    .amount-list span { color: #486875; font-size: 10px; }
+    .grid2 { display: grid; grid-template-columns: 1.1fr .9fr; gap: 13px; margin-bottom: 15px; }
+    .ct { color: #234757; font-size: 13px; font-weight: 800; }
+    .cd { margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .barline { display: flex; align-items: center; gap: 9px; margin: 13px 0; font-size: 10px; }
+    .barline label { width: 140px; color: #476371; }
+    .track { height: 8px; flex: 1; overflow: hidden; border-radius: 20px; background: #edf3f3; }
+    .fill { height: 100%; border-radius: 20px; }
+    .fill.green { background: #3a9a58; }
+    .fill.review { background: #e3b448; }
+    .fill.other { background: #9aaab0; }
+    .barline b { width: 30px; text-align: right; }
+    .muted { color: #718b96; font-size: 10px; line-height: 1.6; }
+
+    .tablecard { overflow: hidden; padding: 0; }
+    .registerhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; }
+    .search { display: flex; gap: 6px; }
+    .search input { min-width: 210px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 18px 12px; border-bottom: 1px solid #edf2f2; }
+    .tab { padding: 8px 11px; border: 0; border-radius: 8px; background: #f1f6f6; color: #52707b; font-size: 10px; text-decoration: none; }
+    .tab.active { background: #e2f2e6; color: #246d3c; font-weight: 800; }
+    .tab span { margin-left: 5px; padding: 2px 6px; border-radius: 20px; background: #fff; }
+    .tablewrap { overflow: auto; }
+    table { width: 100%; min-width: 1180px; border-collapse: collapse; }
+    th { padding: 10px; background: #f4f8f8; color: #66818a; font-size: 9px; letter-spacing: .5px; text-align: left; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 10px; border-top: 1px solid #edf2f2; font-size: 10px; vertical-align: top; }
+    td small { display: block; max-width: 230px; margin-top: 3px; color: #8298a0; }
+    .pill { display: inline-block; padding: 4px 7px; border-radius: 20px; background: #e9f4ed; color: #276d3d; font-size: 9px; font-weight: 750; white-space: nowrap; }
+    .pill.review { background: #fff4df; color: #94671b; }
+    .pill.other { background: #edf1f3; color: #60717b; }
+    .foot { padding: 11px 18px; border-top: 1px solid #edf2f2; color: #8198a0; font-size: 9px; }
+    .note { margin-top: 14px; padding: 12px 14px; border: 1px solid #d4eaf4; border-radius: 11px; background: #eaf5fa; color: #426575; font-size: 10px; }
+    .file { display: none; }
+
+    @media (max-width: 950px) {
+      .sidebar { width: 66px; padding: 17px 8px; }
+      .brand div:last-child, .navlabel, .nav a span, .side-note { display: none; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .grid2 { grid-template-columns: 1fr; }
+      .content { padding: 20px 15px; }
+      .topbar { padding: 0 15px; }
+    }
+
+    @media (max-width: 620px) {
+      .heading { display: block; }
+      .heading .actions { margin-top: 12px; }
+      .registerhead { display: block; }
+      .search { margin-top: 10px; }
+      .search input { min-width: 0; flex: 1; }
+      .kpis { gap: 7px; }
+      .card { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">♧</div>
+        <div><strong>GREEN FINANCE</strong><small>Portfolio intelligence</small></div>
+      </div>
+      <div class="navlabel">WORKSPACE</div>
+      <nav class="nav">
+        <a class="active" href="#overview">▦ &nbsp; <span>Executive overview</span></a>
+        <a href="#about">ⓘ &nbsp; <span>About project</span></a>
+      </nav>
+      <div class="side-note">KGFT-informed asset screening<br>Interactive local dashboard</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb">Portfolio monitoring / Asset mapping</div>
+        <div class="tag">KENYA · KGFT SCREENING</div>
+      </header>
+
+      <div class="content" id="overview">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}" role="status">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <div class="heading">
+          <div>
+            <div class="eyebrow">GREEN FINANCE PORTFOLIO</div>
+            <h1>Executive overview</h1>
+            <div class="sub">Loan portfolio screening against KGFT-informed activity themes</div>
+          </div>
+          <div class="actions">
+            <a class="btn secondary" href="{{ url_for('export_portfolio') }}">↓ Export workbook</a>
+            <form method="post" action="{{ url_for('upload_portfolio') }}" enctype="multipart/form-data" class="actions">
+              <label class="btn primary" for="portfolio">＋ Choose portfolio</label>
+              <input class="file" id="portfolio" name="portfolio" type="file" accept=".csv,text/csv" required>
+              <button class="btn primary" type="submit">Upload and screen</button>
+            </form>
+            <form method="post" action="{{ url_for('reset_portfolio') }}">
+              <button class="btn secondary" type="submit">Restore demo data</button>
+            </form>
+          </div>
+        </div>
+        <div class="source">{{ uploaded_name }} · {{ total }} records</div>
+
+        <section class="kpis" aria-label="Portfolio summary">
+          <div class="card">
+            <div class="kl">Total portfolio value</div>
+            <div class="kv">By currency</div>
+            <div class="kf amount-list">
+              {% for currency, amount in totals.items() %}
+                <span>{{ currency }} {{ "{:,.0f}".format(amount) }}</span>
+              {% else %}
+                <span>No portfolio data</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="card">
+            <div class="kl">Potential green exposure</div>
+            <div class="kv">{{ counts.green }} assets</div>
+            <div class="kf amount-list">
+              {% for currency, amount in potential.items() %}
+                <span>{{ currency }} {{ "{:,.0f}".format(amount) }}</span>
+              {% else %}
+                <span>No candidate exposure</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="card">
+            <div class="kl">Taxonomy-aligned exposure</div>
+            <div class="kv">Not assessed</div>
+            <div class="kf">Requires evidence-based KGFT validation</div>
+          </div>
+          <div class="card">
+            <div class="kl">Pending validation</div>
+            <div class="kv">{{ pending }}</div>
+            <div class="kf">Potential green + manual assessment</div>
+          </div>
+        </section>
+
+        <section class="grid2">
+          <div class="card">
+            <div class="ct">Portfolio screening distribution</div>
+            <div class="cd">Asset counts by preliminary screening outcome</div>
+            {% set denominator = total if total else 1 %}
+            <div class="barline">
+              <label>Potential green</label>
+              <div class="track"><div class="fill green" style="width: {{ chart.potential * 100 / denominator }}%"></div></div>
+              <b>{{ chart.potential }}</b>
+            </div>
+            <div class="barline">
+              <label>Manual assessment</label>
+              <div class="track"><div class="fill review" style="width: {{ chart.review * 100 / denominator }}%"></div></div>
+              <b>{{ chart.review }}</b>
+            </div>
+            <div class="barline">
+              <label>Other / excluded</label>
+              <div class="track"><div class="fill other" style="width: {{ chart.other * 100 / denominator }}%"></div></div>
+              <b>{{ chart.other }}</b>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct">Screening interpretation</div>
+            <div class="cd">How to read the results</div>
+            <p class="muted"><b>Potential green</b> means a strong preliminary keyword match. <b>Manual assessment</b> means a partial or ambiguous match. <b>Other / excluded</b> includes records without a configured positive match and potential exclusion flags.</p>
+            <p class="muted">A keyword result is a prioritisation aid, not a KGFT certification decision.</p>
+          </div>
+        </section>
+
+        <section class="card tablecard">
+          <div class="registerhead">
+            <div>
+              <div class="ct">Asset mapping register</div>
+              <div class="cd">Preview of the first 10 assets · select a classification tab to filter</div>
+            </div>
+            <form class="search" method="get" action="{{ url_for('index') }}">
+              <input type="hidden" name="group" value="{{ group }}">
+              <input name="q" type="search" value="{{ q }}" placeholder="Search asset, sector, county…" aria-label="Search assets">
+              <button class="btn secondary" type="submit">Search</button>
+            </form>
+          </div>
+          <div class="tabs" aria-label="Asset classification filters">
+            <a class="tab {% if group == 'all' %}active{% endif %}" href="{{ url_for('index', group='all', q=q) }}">All assets <span>{{ counts.all }}</span></a>
+            <a class="tab {% if group == 'green' %}active{% endif %}" href="{{ url_for('index', group='green', q=q) }}">Green identified <span>{{ counts.green }}</span></a>
+            <a class="tab {% if group == 'review' %}active{% endif %}" href="{{ url_for('index', group='review', q=q) }}">Manual assessment <span>{{ counts.review }}</span></a>
+            <a class="tab {% if group == 'other' %}active{% endif %}" href="{{ url_for('index', group='other', q=q) }}">Not green <span>{{ counts.other }}</span></a>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Loan ID</th><th>Origination</th><th>Segment</th><th>Sector</th>
+                  <th>County</th><th>Product / purpose</th><th>Currency</th>
+                  <th>Disbursed</th><th>Tenor</th><th>Theme</th><th>Score</th><th>Classification</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                  <tr>
+                    <td>{{ row.loan_id }}</td>
+                    <td>{{ row.origination_date }}</td>
+                    <td>{{ row.borrower_segment }}</td>
+                    <td>{{ row.industry_sector }}</td>
+                    <td>{{ row.county }}</td>
+                    <td>{{ row.product_description }}<small>{{ row.purpose }}</small></td>
+                    <td>{{ row.currency }}</td>
+                    <td>{{ "{:,.0f}".format(row.disbursed_amount) if row.disbursed_amount != "" else "" }}</td>
+                    <td>{{ row.tenor_period }}</td>
+                    <td>{{ row.taxonomy_theme }}</td>
+                    <td>{{ row.rule_score }}</td>
+                    <td>
+                      {% if row.screening_category == "Potential Green — Validation Required" %}
+                        <span class="pill">{{ row.screening_category }}</span>
+                      {% elif row.screening_category == "Manual Assessment" %}
+                        <span class="pill review">{{ row.screening_category }}</span>
+                      {% else %}
+                        <span class="pill other">{{ row.screening_category }}</span>
+                      {% endif %}
+                      <small>{{ row.matched_evidence }}</small>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="12">No matching assets.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="foot">Showing {{ rows|length }} of {{ view_total }} matching assets</div>
+        </section>
+
+        <div class="note"><b>Methodology safeguard:</b> A keyword match does not establish compliance with KGFT activity eligibility, technical screening criteria, Do No Significant Harm requirements or minimum social safeguards. Financial values are kept separate by currency.</div>
+        <section class="card" id="about" style="margin-top: 14px">
+          <div class="ct">About this project</div>
+          <p class="muted">KGFT-informed screening identifies candidate green activities from loan purposes and product descriptions. The workflow is exclusion-first, explainable and designed for human validation. The screening categories are preliminary.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

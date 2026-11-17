@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+KGFT_AssetMapper/__pycache__/
+KGFT_AssetMapper/uploads/
+KGFT_AssetMapper/outputs/

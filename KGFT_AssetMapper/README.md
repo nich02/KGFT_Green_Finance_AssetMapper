@@ -18,6 +18,8 @@ screening happens locally in your browser, and the selected dataset is not
 uploaded or saved by the site. The static dashboard exports an Excel workbook
 with `All assets`, `Green identified`, `Manual assessment`, and `Not green`
 sheets. The Flask server is not run by GitHub Pages.
+The expected Pages URL is
+https://nich02.github.io/KGFT_Green_Finance_AssetMapper/ after deployment succeeds.
 
 ## Upload and export
 - Upload a CSV using the dashboard's **Upload portfolio** control.

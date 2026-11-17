@@ -46,7 +46,46 @@ function classify(a){
  const [theme,raw]=entries[0],score=Math.min(Math.round(raw),100),category=score>=70?'Potential Green — Validation Required':'Manual Assessment';
  return {...a,screening_category:category,taxonomy_theme:theme,rule_score:score,matched_evidence:evidence.join('; '),status:score>=70?'green':'review'};
 }
-function csvParse(text){const out=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===','){row.push(field);field=''}else if(c==='\\n'){row.push(field.replace(/\\r$/,''));out.push(row);row=[];field=''}else field+=c}if(field.length||row.length){row.push(field.replace(/\\r$/,''));out.push(row)}const headers=out.shift().map(x=>x.trim());return out.filter(r=>r.some(v=>v.trim()!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));}
+function csvParse(text){
+ const source=text.replace(/^\uFEFF/,'');
+ const delimiters=[',',';','\t','|'];
+ const counts=new Map(delimiters.map(delimiter=>[delimiter,0]));
+ let quoted=false;
+ for(let i=0;i<source.length;i++){
+  const c=source[i],code=source.charCodeAt(i);
+  if(c==='"'&&source[i+1]==='"'){i++;continue}
+  if(c==='"'){quoted=!quoted;continue}
+  if(!quoted&&(code===10||code===13))break;
+  if(!quoted&&counts.has(c))counts.set(c,counts.get(c)+1);
+ }
+ let delimiter=',',maxCount=0;
+ for(const candidate of delimiters){
+  if(counts.get(candidate)>maxCount){delimiter=candidate;maxCount=counts.get(candidate)}
+ }
+
+ const out=[];let row=[],field='';quoted=false;
+ for(let i=0;i<source.length;i++){
+  const c=source[i],code=source.charCodeAt(i);
+  if(quoted){
+   if(c==='"'&&source[i+1]==='"'){field+='"';i++}
+   else if(c==='"')quoted=false;
+   else field+=c;
+  }else if(c==='"')quoted=true;
+  else if(c===delimiter){row.push(field);field=''}
+  else if(code===10){
+   if(field.charCodeAt(field.length-1)===13)field=field.slice(0,-1);
+   row.push(field);out.push(row);row=[];field='';
+  }else field+=c;
+ }
+ if(field.length||row.length){row.push(field);out.push(row)}
+ while(out.length&&out[0].every(value=>value.trim()===''))out.shift();
+ if(!out.length){csvParse.lastHeaders=[];return []}
+ const headers=out.shift().map(value=>value.replace(/^\uFEFF/,'').trim());
+ csvParse.lastHeaders=headers;
+ return out.filter(values=>values.some(value=>value.trim()!=='')).map(values=>
+  Object.fromEntries(headers.map((header,index)=>[header,values[index]??'']))
+ );
+}
 function fmt(n){return Number(n||0).toLocaleString('en-KE',{maximumFractionDigits:0})}
 function groupOf(a){return a.status}
 function filtered(){const q=document.getElementById('search').value.toLowerCase();return assets.filter(a=>(activeGroup==='all'||groupOf(a)===activeGroup)&&(!q||Object.values(a).join(' ').toLowerCase().includes(q)))}
@@ -66,6 +105,33 @@ function render(){
 }
 function exportCsv(){if(!assets.length)return;const cols=Object.keys(assets[0]).filter(k=>k!=='status');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[cols.join(','),...assets.map(a=>cols.map(k=>q(a[k])).join(','))].join('\\r\\n');const blob=new Blob(['\\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='green_asset_mapping_register.csv';a.click();URL.revokeObjectURL(url)}
 document.getElementById('search').addEventListener('input',render);
-document.getElementById('file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=csvParse(await f.text());const required=['loan_id','origination_date','borrower_segment','industry_sector','county','product_description','purpose','collateral_type','currency','disbursed_amount','tenor_period'];const missing=required.filter(c=>!parsed.length||!(c in parsed[0]));if(missing.length)throw new Error('Missing columns: '+missing.join(', '));const ids=parsed.map(a=>a.loan_id);if(new Set(ids).size!==ids.length)throw new Error('loan_id values must be unique.');if(parsed.some(a=>!a.loan_id||!Number.isFinite(Number(a.disbursed_amount))||Number(a.disbursed_amount)<0))throw new Error('Each row needs a loan_id and a valid non-negative disbursed_amount.');assets=parsed.map(classify);activeGroup='all';document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.group==='all'));document.getElementById('source').textContent=f.name+' · '+assets.length+' records uploaded locally';document.getElementById('flash').textContent='CSV loaded and screened in this browser preview.';document.getElementById('flash').className='flash';render()}catch(err){document.getElementById('flash').textContent='Upload error: '+err.message;document.getElementById('flash').className='flash error'}});
+document.getElementById('file').addEventListener('change',async e=>{
+ const f=e.target.files[0];
+ if(!f)return;
+ try{
+  const parsed=csvParse(await f.text());
+  const required=['loan_id','origination_date','borrower_segment','industry_sector','county','product_description','purpose','collateral_type','currency','disbursed_amount','tenor_period'];
+  const missing=required.filter(column=>!csvParse.lastHeaders.includes(column));
+  if(missing.length){
+   const found=csvParse.lastHeaders.length?'; found columns: '+csvParse.lastHeaders.join(', '):'';
+   throw new Error('Missing columns: '+missing.join(', ')+found);
+  }
+  if(!parsed.length)throw new Error('CSV contains headers but no data rows.');
+  const ids=parsed.map(asset=>asset.loan_id);
+  if(new Set(ids).size!==ids.length)throw new Error('loan_id values must be unique.');
+  if(parsed.some(asset=>!asset.loan_id||!Number.isFinite(Number(asset.disbursed_amount))||Number(asset.disbursed_amount)<0))
+   throw new Error('Each row needs a loan_id and a valid non-negative disbursed_amount.');
+  assets=parsed.map(classify);
+  activeGroup='all';
+  document.querySelectorAll('.tab').forEach(button=>button.classList.toggle('active',button.dataset.group==='all'));
+  document.getElementById('source').textContent=f.name+' · '+assets.length+' records uploaded locally';
+  document.getElementById('flash').textContent='CSV loaded and screened in this browser preview.';
+  document.getElementById('flash').className='flash';
+  render();
+ }catch(err){
+  document.getElementById('flash').textContent='Upload error: '+err.message;
+  document.getElementById('flash').className='flash error';
+ }
+});
 render();
 </script></body></html>

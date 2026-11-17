@@ -20,6 +20,9 @@ with `All assets`, `Green identified`, `Manual assessment`, and `Not green`
 sheets. The Flask server is not run by GitHub Pages.
 The expected Pages URL is
 https://nich02.github.io/KGFT_Green_Finance_AssetMapper/ after deployment succeeds.
+The browser demo accepts CSV files regardless of filename, provided the
+required column names are present. It detects comma, semicolon, tab, or pipe
+delimiters and handles a UTF-8 byte-order mark in the header.
 
 ## Upload and export
 - Upload a CSV using the dashboard's **Upload portfolio** control.
